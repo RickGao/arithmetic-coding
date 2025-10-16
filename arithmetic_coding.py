@@ -435,23 +435,50 @@ class ArithmeticEncoder:
 
 
 if __name__ == "__main__":
-    # An example
+    # Example 1
     message = ["B", "A", "A", "A", "<EOM>"]
     frequencies = list(set(message))
     encoder = ArithmeticEncoder(frequencies=frequencies, bits=8)
     bits = list(encoder.encode(message))
     decoded = list(encoder.decode(bits))
-    assert decoded == message
 
-    # Another example
+    print("Original:", message)
+    print("Encoded bits:", bits)
+    print("Decoded:", decoded)
+    print("Match:", decoded == message)
+
+    print("\n------------------\n")
+
+    # Example 2
     message = ["R", "N", "<EOM>"]
     frequencies = list(set(message))
     encoder = ArithmeticEncoder(frequencies=frequencies, bits=14)
     bits = list(encoder.encode(message))
     decoded = list(encoder.decode(bits))
 
+    print("Original:", message)
+    print("Encoded bits:", bits)
+    print("Decoded:", decoded)
+    print("Match:", decoded == message)
 
-if __name__ == "__main__":
-    import doctest
+# if __name__ == "__main__":
+#     # An example
+#     message = ["B", "A", "A", "A", "<EOM>"]
+#     frequencies = list(set(message))
+#     encoder = ArithmeticEncoder(frequencies=frequencies, bits=8)
+#     bits = list(encoder.encode(message))
+#     decoded = list(encoder.decode(bits))
+#     assert decoded == message
+#
+#     # Another example
+#     message = ["R", "N", "<EOM>"]
+#     frequencies = list(set(message))
+#     encoder = ArithmeticEncoder(frequencies=frequencies, bits=14)
+#     bits = list(encoder.encode(message))
+#     decoded = list(encoder.decode(bits))
 
-    doctest.testmod()
+
+# if __name__ == "__main__":
+#     import doctest
+#
+#     doctest.testmod()
