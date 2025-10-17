@@ -39,7 +39,7 @@ def encode_list(data, bits=16):
     return all_bits
 
 
-def encode_file(filename, num_lines=None, bits=18):
+def encode_file(filename, num_lines=None, bits=16):
     """
     Read from file and encode each line.
     Uses global frequency statistics from all lines, but encodes each line independently.
@@ -74,6 +74,7 @@ def encode_file(filename, num_lines=None, bits=18):
     # Compute global frequency statistics (across all lines, but lines are not concatenated)
     all_symbols = []
     for seq in sequences:
+        # print(seq)
         all_symbols.extend(str(s) for s in seq)
 
     frequencies = dict(Counter(all_symbols))
@@ -94,6 +95,8 @@ def encode_file(filename, num_lines=None, bits=18):
         encoder = ArithmeticEncoder(frequencies=frequencies, bits=bits, EOM='<EOM>')
         message = data_str + ['<EOM>']
         encoded_bits = list(encoder.encode(message))
+        decoded_bits = list(encoder.decode(encoded_bits))
+        # print(decoded_bits)
 
         results.append((data, encoded_bits))
         total_bits += len(encoded_bits)
@@ -108,24 +111,31 @@ def encode_file(filename, num_lines=None, bits=18):
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("Example 1: Encode a list")
-    print("=" * 60)
-    data = [1, 2, 2, 3, 1, 2, 3, 1, 2, 2]
-    bits = encode_list(data)
-    print()
+    # print("=" * 60)
+    # print("Encode a list")
+    # print("=" * 60)
+    # data = [1, 2, 2, 3, 1, 2, 3, 1, 2, 2]
+    # bits = encode_list(data)
+    # print(bits)
+    # print()
 
     print("=" * 60)
-    print("Example 2: Encode from file")
+    print("Encode from file")
     print("=" * 60)
 
     # Create test file
-    with open('test_codes.txt', 'w') as f:
-        f.write("1 2 3 4 5 1 2 3\n")
-        f.write("2 3 4 5 6 2 3 4\n")
-        f.write("3 4 5 6 7 3 4 5\n")
-        f.write("1 1 2 2 3 3 4 4\n")
+    # with open('test_codes.txt', 'w') as f:
+    #     f.write("1 2 3 4 5 1 8 9\n")
+    #     f.write("2 3 4 5 6 2 3 4\n")
+    #     f.write("3 4 5 6 7 3 4 5\n")
+    #     f.write("1 1 2 2 3 3 4 4\n")
 
-    results = encode_file('test_codes.txt', num_lines=4)
+    # results_test = encode_file('test_codes.txt', num_lines=1)
 
-    results = encode_file('codes.txt', num_lines=10)
+    # results_23x40x4 = encode_file('codes23x40x4.txt', num_lines=1000, bits=28)
+
+    results_23x40x8 = encode_file('codes23x40x8.txt', num_lines=1000, bits=28)
+
+    results_23x40x16 = encode_file('codes23x40x16.txt', num_lines=1000, bits=28)
+
+
