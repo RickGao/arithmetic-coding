@@ -3,16 +3,6 @@ from arithmetic_coding import ArithmeticEncoder
 
 
 def readcode(filename, n=None):
-    """
-    读取文件，每行都是空格分隔的数字
-
-    参数:
-        filename: 文件名
-        n: 读取前n行，如果为None则读取所有行
-
-    返回:
-        list套list结构
-    """
     result = []
     with open(filename, 'r', encoding='utf-8') as f:
         for i, line in enumerate(f):
@@ -46,7 +36,7 @@ print("Context:", len(prob_dist))
 
 encoder = ArithmeticEncoder(ngram_model=model, bits=32)
 
-test_sequence = readcode('codes23x40x4.txt', 1000)[998][:3000]
+test_sequence = readcode('codes23x40x4.txt', 1000)[988][:3000]
 
 encoded_bits = encoder.encode(test_sequence)
 # print(encoded_bits)
