@@ -73,9 +73,10 @@ class ArithmeticEncoder:
         if context not in self.prob_distribution:
             # If context not seen, use uniform distribution
             prob_dict = {char: 1.0 / len(self.vocab) for char in self.vocab}
+            # print("1")
         else:
             prob_dict = self.prob_distribution[context]
-        
+
         # Convert probabilities to cumulative ranges
         ranges = {}
         cumsum = 0
@@ -116,6 +117,7 @@ class ArithmeticEncoder:
         
         # Initialize context with start tokens
         context = tuple([self.start_token] * (self.n - 1))
+
         
         for symbol in full_message:
             # Get ranges for current context
@@ -158,7 +160,12 @@ class ArithmeticEncoder:
                 high = 2 * high + 1
             
             # Update context (slide window)
-            context = context[1:] + (symbol,)
+            if self.n == 1:
+                # 1-gram: context永远是空tuple，不更新
+                context = ()
+            else:
+                # N-gram (n>1): 滑动窗口
+                context = context[1:] + (symbol,)
         
         # Output final bits
         pending_bits += 1
@@ -271,7 +278,10 @@ class ArithmeticEncoder:
                     bit_index += 1
             
             # Update context
-            context = context[1:] + (symbol,)
+            if self.n == 1:
+                context = ()
+            else:
+                context = context[1:] + (symbol,)
         
         return decoded_message
 

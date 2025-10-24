@@ -132,10 +132,10 @@ if __name__ == "__main__":
 
     # results_test = encode_file('test_codes.txt', num_lines=1)
 
-    # results_23x40x4 = encode_file('codes23x40x4.txt', num_lines=1000, bits=28)
+    results_23x40x4 = encode_file('codes23x40x4.txt', num_lines=10, bits=32)
 
-    results_23x40x8 = encode_file('codes23x40x8.txt', num_lines=1000, bits=28)
+    # results_23x40x8 = encode_file('codes23x40x8.txt', num_lines=1000, bits=32)
 
-    results_23x40x16 = encode_file('codes23x40x16.txt', num_lines=1000, bits=28)
+    # results_23x40x16 = encode_file('codes23x40x16.txt', num_lines=1000, bits=32)
 
 
