@@ -36,7 +36,7 @@ print("Context:", len(prob_dist))
 
 encoder = ArithmeticEncoder(ngram_model=model, bits=32)
 
-test_sequence = readcode('codes23x40x4.txt', 1000)[988][:3000]
+test_sequence = readcode('codes23x40x4.txt', 1000)[990][:3000]
 
 encoded_bits = encoder.encode(test_sequence)
 # print(encoded_bits)
