@@ -26,7 +26,8 @@ model.fit(training_sequences)
 
 
 prob_dist = model.get_probability_distribution()
-print(prob_dist)
+with open('prob_dist.txt', 'w') as f:
+    f.write(str(prob_dist))
 print("Context:", len(prob_dist))
 
 # inner_dict = prob_dist[(1498,)]
