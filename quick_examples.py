@@ -29,6 +29,8 @@ training_sequences = [
 # 步骤1: 训练N-gram模型
 model = NGramModel(n=3, k=0.00001, start_token=-1, end_token=-2)
 model.fit(training_sequences)
+prob_dist = model.get_probability_distribution()
+print(prob_dist)
 print(f"模型训练完成！词汇表大小: {len(model.vocab)}")
 
 # 步骤2: 创建算术编码器
@@ -50,118 +52,118 @@ print(f"解码结果: {decoded_sequence}")
 print(f"正确性: {'✓' if decoded_sequence == test_sequence else '✗'}")
 
 
-# ============================================================================
-# 示例 2: 查看概率分布
-# ============================================================================
-print("\n" + "=" * 70)
-print("示例 2: 查看概率分布")
-print("=" * 70)
-
-# 获取完整概率分布
-prob_dist = model.get_probability_distribution()
-
-# 查看句子开始的概率
-start_context = model.get_start_context()
-print(f"\n句子开始 {start_context} 后最可能的字符:")
-if start_context in prob_dist:
-    top_chars = sorted(prob_dist[start_context].items(), key=lambda x: -x[1])[:3]
-    for char, prob in top_chars:
-        print(f"  字符 {char}: {prob:.4f}")
-
-# 查看特定上下文
-context = (1, 2)
-print(f"\n给定上下文 {context}:")
-if context in prob_dist:
-    top_chars = sorted(prob_dist[context].items(), key=lambda x: -x[1])[:3]
-    for char, prob in top_chars:
-        marker = " (结束符)" if char == model.end_token else ""
-        print(f"  字符 {char}{marker}: {prob:.4f}")
-
-
-# ============================================================================
-# 示例 3: 直接使用概率分布（不需要NGramModel对象）
-# ============================================================================
-print("\n" + "=" * 70)
-print("示例 3: 直接使用概率分布")
-print("=" * 70)
-
-# 可以保存概率分布，稍后使用
-saved_prob_dist = model.get_probability_distribution()
-
-# 创建新的编码器，直接使用概率分布
-encoder2 = ArithmeticEncoder(
-    prob_distribution=saved_prob_dist,
-    bits=32,
-    start_token=-1,
-    end_token=-2
-)
-
-# 编码
-test_seq2 = [2, 3, 4, 5]
-encoded2 = encoder2.encode(test_seq2)
-decoded2 = encoder2.decode(encoded2)
-print(f"原始: {test_seq2}")
-print(f"编码: {len(encoded2)} bits")
-print(f"解码: {decoded2}")
-print(f"正确: {'✓' if decoded2 == test_seq2 else '✗'}")
-
-
-# ============================================================================
-# 示例 4: 测试不同的N值
-# ============================================================================
-print("\n" + "=" * 70)
-print("示例 4: 比较不同N值的效果")
-print("=" * 70)
-
-test_data = [
-    [1, 2, 3, 4, 5] * 2,  # 重复模式
-    [2, 3, 4, 5, 6] * 2,
-]
-
-test_sequence_long = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
-
-for n_value in [2, 3, 4]:
-    model_n = NGramModel(n=n_value, k=0.00001)
-    model_n.fit(test_data)
-    
-    encoder_n = ArithmeticEncoder(ngram_model=model_n, bits=32)
-    encoded_n = encoder_n.encode(test_sequence_long)
-    decoded_n = encoder_n.decode(encoded_n)
-    
-    correct = "✓" if decoded_n == test_sequence_long else "✗"
-    ratio = len(encoded_n) / (len(test_sequence_long) * 11)
-    
-    print(f"\nN={n_value}:")
-    print(f"  编码长度: {len(encoded_n)} bits")
-    print(f"  压缩率: {ratio:.2%}")
-    print(f"  正确性: {correct}")
-
-
-# ============================================================================
-# 示例 5: 使用预测功能
-# ============================================================================
-print("\n" + "=" * 70)
-print("示例 5: 使用预测功能")
-print("=" * 70)
-
-model5 = NGramModel(n=3, k=0.01)
-model5.fit([[1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4], [1, 2, 3, 4]])
-
-# 预测下一个字符
-context = (1, 2)
-predicted = model5.predict_next(context)
-prob_dist_ctx = model5.get_next_char_prob(context)
-
-print(f"\n给定上下文 {context}:")
-print(f"预测的下一个字符: {predicted}")
-print(f"概率: {prob_dist_ctx[predicted]:.4f}")
-
-print("\n所有可能的下一个字符:")
-for char, prob in sorted(prob_dist_ctx.items(), key=lambda x: -x[1]):
-    marker = " (结束符)" if char == model5.end_token else ""
-    print(f"  字符 {char}{marker}: {prob:.4f}")
-
-
-print("\n" + "=" * 70)
-print("所有示例完成！")
-print("=" * 70)
+# # ============================================================================
+# # 示例 2: 查看概率分布
+# # ============================================================================
+# print("\n" + "=" * 70)
+# print("示例 2: 查看概率分布")
+# print("=" * 70)
+#
+# # 获取完整概率分布
+# prob_dist = model.get_probability_distribution()
+#
+# # 查看句子开始的概率
+# start_context = model.get_start_context()
+# print(f"\n句子开始 {start_context} 后最可能的字符:")
+# if start_context in prob_dist:
+#     top_chars = sorted(prob_dist[start_context].items(), key=lambda x: -x[1])[:3]
+#     for char, prob in top_chars:
+#         print(f"  字符 {char}: {prob:.4f}")
+#
+# # 查看特定上下文
+# context = (1, 2)
+# print(f"\n给定上下文 {context}:")
+# if context in prob_dist:
+#     top_chars = sorted(prob_dist[context].items(), key=lambda x: -x[1])[:3]
+#     for char, prob in top_chars:
+#         marker = " (结束符)" if char == model.end_token else ""
+#         print(f"  字符 {char}{marker}: {prob:.4f}")
+#
+#
+# # ============================================================================
+# # 示例 3: 直接使用概率分布（不需要NGramModel对象）
+# # ============================================================================
+# print("\n" + "=" * 70)
+# print("示例 3: 直接使用概率分布")
+# print("=" * 70)
+#
+# # 可以保存概率分布，稍后使用
+# saved_prob_dist = model.get_probability_distribution()
+#
+# # 创建新的编码器，直接使用概率分布
+# encoder2 = ArithmeticEncoder(
+#     prob_distribution=saved_prob_dist,
+#     bits=32,
+#     start_token=-1,
+#     end_token=-2
+# )
+#
+# # 编码
+# test_seq2 = [2, 3, 4, 5]
+# encoded2 = encoder2.encode(test_seq2)
+# decoded2 = encoder2.decode(encoded2)
+# print(f"原始: {test_seq2}")
+# print(f"编码: {len(encoded2)} bits")
+# print(f"解码: {decoded2}")
+# print(f"正确: {'✓' if decoded2 == test_seq2 else '✗'}")
+#
+#
+# # ============================================================================
+# # 示例 4: 测试不同的N值
+# # ============================================================================
+# print("\n" + "=" * 70)
+# print("示例 4: 比较不同N值的效果")
+# print("=" * 70)
+#
+# test_data = [
+#     [1, 2, 3, 4, 5] * 2,  # 重复模式
+#     [2, 3, 4, 5, 6] * 2,
+# ]
+#
+# test_sequence_long = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
+#
+# for n_value in [2, 3, 4]:
+#     model_n = NGramModel(n=n_value, k=0.00001)
+#     model_n.fit(test_data)
+#
+#     encoder_n = ArithmeticEncoder(ngram_model=model_n, bits=32)
+#     encoded_n = encoder_n.encode(test_sequence_long)
+#     decoded_n = encoder_n.decode(encoded_n)
+#
+#     correct = "✓" if decoded_n == test_sequence_long else "✗"
+#     ratio = len(encoded_n) / (len(test_sequence_long) * 11)
+#
+#     print(f"\nN={n_value}:")
+#     print(f"  编码长度: {len(encoded_n)} bits")
+#     print(f"  压缩率: {ratio:.2%}")
+#     print(f"  正确性: {correct}")
+#
+#
+# # ============================================================================
+# # 示例 5: 使用预测功能
+# # ============================================================================
+# print("\n" + "=" * 70)
+# print("示例 5: 使用预测功能")
+# print("=" * 70)
+#
+# model5 = NGramModel(n=3, k=0.01)
+# model5.fit([[1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 4], [1, 2, 3, 4]])
+#
+# # 预测下一个字符
+# context = (1, 2)
+# predicted = model5.predict_next(context)
+# prob_dist_ctx = model5.get_next_char_prob(context)
+#
+# print(f"\n给定上下文 {context}:")
+# print(f"预测的下一个字符: {predicted}")
+# print(f"概率: {prob_dist_ctx[predicted]:.4f}")
+#
+# print("\n所有可能的下一个字符:")
+# for char, prob in sorted(prob_dist_ctx.items(), key=lambda x: -x[1]):
+#     marker = " (结束符)" if char == model5.end_token else ""
+#     print(f"  字符 {char}{marker}: {prob:.4f}")
+#
+#
+# print("\n" + "=" * 70)
+# print("所有示例完成！")
+# print("=" * 70)

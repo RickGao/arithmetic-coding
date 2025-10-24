@@ -174,3 +174,125 @@ class NGramModel:
             是否为结束符
         """
         return token == self.end_token
+
+
+# 使用示例
+if __name__ == "__main__":
+    # 示例数据：多行序列，每行由index构成
+    # 注意：不需要手动添加开始符和结束符，模型会自动添加
+    sequences = [
+        [1, 2, 3, 4, 5],
+        [2, 3, 4, 5, 6],
+        [1, 2, 3, 5, 6],
+        [1, 2, 4, 5, 6],
+        [2, 3, 4, 4, 5],
+        [3, 3, 3, 3, 3]
+    ]
+
+    # 创建trigram模型 (n=3)
+    # 开始符=-1, 结束符=-2
+    model = NGramModel(n=3, k=0.01, start_token=-1, end_token=-2)
+
+    # 训练模型
+    model.fit(sequences)
+
+    # 获取完整的概率分布
+    prob_dist = model.get_probability_distribution()
+
+    print("=" * 70)
+    print("N-gram概率分布 (包括开始符-1和结束符-2):")
+    print("=" * 70)
+
+    print(prob_dist)
+
+    # 只显示部分重要的context
+    important_contexts = [
+        model.get_start_context(),  # 句子开始
+        (1, 2),  # 普通context
+        (5, 6),  # 可能接近结束的context
+    ]
+
+    for context in prob_dist:
+        if context in prob_dist:
+            print(f"\n给定前缀 {context}, 下一个字符的概率分布:")
+            sorted_probs = sorted(prob_dist[context].items(), key=lambda x: -x[1])[:10]
+            for next_char, prob in sorted_probs:
+                token_name = ""
+                if next_char == model.start_token:
+                    token_name = " (开始符)"
+                elif next_char == model.end_token:
+                    token_name = " (结束符)"
+                print(f"  字符 {next_char}{token_name}: {prob:.4f}")
+
+    # 展示所有包含开始符或结束符的context
+    print("\n" + "=" * 70)
+    print("包含特殊符号的所有context:")
+    print("=" * 70)
+
+    special_contexts = []
+    for context in sorted(prob_dist.keys()):
+        if model.start_token in context or any(model.end_token in prob_dist[context] for _ in [1]):
+            if context not in important_contexts:
+                special_contexts.append(context)
+
+    # 显示句子开始情况
+    start_context = model.get_start_context()
+    if start_context in prob_dist:
+        print(f"\n句子开始 {start_context} 后最可能的字符:")
+        top_3 = sorted(prob_dist[start_context].items(), key=lambda x: -x[1])[:3]
+        for char, prob in top_3:
+            print(f"  字符 {char}: {prob:.4f}")
+
+    # 显示包含结束符的情况
+    print(f"\n最可能以结束符结尾的context:")
+    end_probs = []
+    for context, next_chars in prob_dist.items():
+        if model.end_token in next_chars:
+            end_probs.append((context, next_chars[model.end_token]))
+
+    end_probs.sort(key=lambda x: -x[1])
+    for context, prob in end_probs[:5]:
+        print(f"  {context} -> 结束符: {prob:.4f}")
+
+    # 测试预测
+    print("\n" + "=" * 70)
+    print("预测示例:")
+    print("=" * 70)
+
+    # 1. 句子开始时的预测
+    start_ctx = model.get_start_context()
+    print(f"\n1. 句子开始 {start_ctx}:")
+    next_char_probs = model.get_next_char_prob(start_ctx)
+    predicted = model.predict_next(start_ctx)
+    print(f"   最可能的第一个字符: {predicted}")
+    print(f"   概率: {next_char_probs[predicted]:.4f}")
+
+    # 2. 中间位置的预测
+    test_context = (1, 2)
+    print(f"\n2. 给定前缀 {test_context}:")
+    next_char_probs = model.get_next_char_prob(test_context)
+    predicted = model.predict_next(test_context)
+    print(f"   最可能的下一个字符: {predicted}")
+    print(f"   概率: {next_char_probs[predicted]:.4f}")
+    if model.end_token in next_char_probs:
+        print(f"   结束的概率: {next_char_probs[model.end_token]:.4f}")
+
+    # 3. 计算特定n-gram的概率
+    print("\n" + "=" * 70)
+    print("特定n-gram概率:")
+    print("=" * 70)
+
+    # 句子开始的概率
+    start_ngram = tuple(list(start_ctx) + [1])
+    prob = model.get_probability(start_ngram)
+    print(f"\nP(1 | {start_ctx}) = {prob:.4f} (句子以1开始)")
+
+    # 普通n-gram
+    test_ngram = (1, 2, 3)
+    prob = model.get_probability(test_ngram)
+    print(f"P({test_ngram[-1]} | {test_ngram[:-1]}) = {prob:.4f}")
+
+    # 结束的概率
+    end_ngram = (5, 6, model.end_token)
+    prob = model.get_probability(end_ngram)
+    print(f"P(结束符 | {end_ngram[:-1]}) = {prob:.4f} (序列在5,6后结束)")
