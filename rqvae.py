@@ -25,28 +25,28 @@ def readcode(filename, n=None):
     return result
 
 
+
 training_sequences = readcode('codes23x40x4.txt', 900)
 
-# model = NGramModel(n=1, k=0.00001, start_token=-1, end_token=-2)
-# model = NGramModel(n=3, k=0.00001, start_token=-1, end_token=-2)
+# model = NGramModel(n=1, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 model = NGramModel(n=2, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 
 
 model.fit(training_sequences)
 
+
 prob_dist = model.get_probability_distribution()
 print(prob_dist)
+print("Context:", len(prob_dist))
 
 # inner_dict = prob_dist[(1498,)]
 # total = sum(inner_dict.values())
 # print(total)
 
 
-print(f"模型训练完成！词汇表大小: {len(model.vocab)}")
-
 encoder = ArithmeticEncoder(ngram_model=model, bits=32)
 
-test_sequence = readcode('codes23x40x4.txt', 1000)[997][:3000]
+test_sequence = readcode('codes23x40x4.txt', 1000)[998][:3000]
 
 encoded_bits = encoder.encode(test_sequence)
 # print(encoded_bits)
@@ -58,3 +58,7 @@ print(f"压缩率: {len(encoded_bits) / (len(test_sequence) * 11):.2%}")
 decoded_sequence = encoder.decode(encoded_bits)
 # print(f"解码结果: {decoded_sequence}")
 print(f"正确性: {'正确' if decoded_sequence == test_sequence else '错误'}")
+
+
+
+
