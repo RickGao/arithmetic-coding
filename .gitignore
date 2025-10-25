@@ -7,3 +7,6 @@
 .DS_Store
 .DS_Store
 prob_dist_2gram_900.txt
+prob_dict.pkl
+prob_dist.txt
+prob_dist.txt
