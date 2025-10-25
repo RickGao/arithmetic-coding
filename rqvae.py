@@ -17,45 +17,55 @@ def readcode(filename, n=None):
 
 
 
-training_sequences = readcode('codes23x40x4.txt', 900)
+training_sequences = readcode('codes23x40x16.txt', 900)
 
 # model = NGramModel(n=1, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
+# model = NGramModel(n=2, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 # model = NGramModel(n=3, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 
 
 # model.fit(training_sequences)
-
-
+#
+#
 # prob_dist = model.get_probability_distribution()
 # with open('prob_dict.pkl', 'wb') as f:
 #     pickle.dump(prob_dist, f)
 
-with open('prob_dict.pkl', 'rb') as f:
+with open('prob_dict_x4_3gram_900.pkl', 'rb') as f:
     prob_dist = pickle.load(f)
-
 print(type(prob_dist))
 
 # inner_dict = prob_dist[(1498,)]
 # total = sum(inner_dict.values())
 # print(total)
 
+# encoder = ArithmeticEncoder(ngram_model=model, bits=32)
 
 encoder = ArithmeticEncoder(prob_distribution=prob_dist, bits=32)
 
 print("Encoder Created")
 
-test_sequence = readcode('codes23x40x4.txt', 1000)[990][:3000]
+codes = readcode('codes23x40x4.txt', 1000)[950:999]
 
-encoded_bits = encoder.encode(test_sequence)
-# print(encoded_bits)
-# print(f"\n原始序列: {test_sequence}")
-print(f"编码后: {len(encoded_bits)} bits")
-print(f"压缩率: {len(encoded_bits) / (len(test_sequence) * 11):.2%}")
+avgrate = []
+
+for i in range(len(codes)):
+    print(f"Code: ", i)
+    test_sequence = codes[i]
+    encoded_bits = encoder.encode(test_sequence)
+    # print(encoded_bits)
+    # print(f"\n原始序列: {test_sequence}")
+    print(f"编码后: {len(encoded_bits)} bits")
+    rate = len(encoded_bits) / (len(test_sequence) * 11)
+    avgrate.append(rate)
+    print(f"压缩率: {rate:.2%}")
 
 
-decoded_sequence = encoder.decode(encoded_bits)
-# print(f"解码结果: {decoded_sequence}")
-print(f"正确性: {'正确' if decoded_sequence == test_sequence else '错误'}")
+    decoded_sequence = encoder.decode(encoded_bits)
+    # print(f"解码结果: {decoded_sequence}")
+    print(f"正确性: {'正确' if decoded_sequence == test_sequence else '错误'}")
+
+print(f"平均压缩率: {sum(avgrate)/len(avgrate):.2%}")
 
 
 
