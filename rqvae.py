@@ -1,5 +1,6 @@
 from ngram import NGramModel
 from arithmetic_coding import ArithmeticEncoder
+import pickle
 
 
 def readcode(filename, n=None):
@@ -19,16 +20,18 @@ def readcode(filename, n=None):
 training_sequences = readcode('codes23x40x4.txt', 900)
 
 # model = NGramModel(n=1, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
-model = NGramModel(n=2, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
+model = NGramModel(n=3, k=0.1, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 
 
 model.fit(training_sequences)
 
 
 prob_dist = model.get_probability_distribution()
-with open('prob_dist.txt', 'w') as f:
-    f.write(str(prob_dist))
-print("Context:", len(prob_dist))
+with open('prob_dict.pkl', 'wb') as f:
+    pickle.dump(prob_dist, f)
+
+# with open('prob_dict.pkl', 'rb') as f:
+#     prob_dist = pickle.load(f)
 
 # inner_dict = prob_dist[(1498,)]
 # total = sum(inner_dict.values())
