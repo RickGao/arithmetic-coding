@@ -15,12 +15,20 @@ def readcode(filename, n=None):
                 result.append(numbers)
     return result
 
+# N-GRAM
+N = 2
+# K smoothing
+K = 0.1
+# Depth of RQVAE code
+D = 4
 
-# 创建 logger
+
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-logfile = "logs/2gram_x4_log.txt"
+logfile = "logs/"+str(N)+"gram_x"+str(D)+"_log.txt"
+print("Log:", logfile)
 file_handler = logging.FileHandler(logfile, mode='w', encoding='utf-8')
 console_handler = logging.StreamHandler(sys.stdout)
 
@@ -32,21 +40,21 @@ logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
 
-filename = 'data/codes23x40x4.txt'
-N = 2
-K = 0.1
+filename = "data/codes23x40x"+ str(D) +".txt"
 
-
+logger.info(f"N={N}, K={K}")
+logger.info(f"Data: {filename}")
 
 training_sequences = readcode(filename, 900)
+
 
 model = NGramModel(n=N, k=K, start_token=-1, end_token=-2, initial_vocab=set(range(2048)))
 
 model.fit(training_sequences)
 
-model.save('models/2gram_x4.pkl')
+model.save("models/"+str(N)+"gram_x"+str(D)+".pkl")
 
-# model = NGramModel.load('models/2gram_x16.pkl')
+# model = NGramModel.load("models/"+str(N)+"gram_x"+str(D)+".pkl")
 
 
 encoder = ArithmeticEncoder(ngram_model=model, bits=32)
@@ -54,7 +62,7 @@ encoder = ArithmeticEncoder(ngram_model=model, bits=32)
 
 print("Encoder Created")
 
-codes = readcode(filename, 1000)[900:999]
+codes = readcode(filename, 1000)[900:1000]
 
 avgrate = []
 
