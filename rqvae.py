@@ -16,7 +16,7 @@ def readcode(filename, n=None):
     return result
 
 # N-GRAM
-N = 3
+N = 1
 # K smoothing
 K = 0.1
 # Depth of RQVAE code
@@ -53,6 +53,7 @@ model = NGramModel(n=N, k=K, start_token=-1, end_token=-2)
 model.fit(training_sequences)
 
 model.save("models/"+str(N)+"gram_x"+str(D)+".pkl")
+
 
 # model = NGramModel.load("models/"+str(N)+"gram_x"+str(D)+".pkl")
 
