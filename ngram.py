@@ -1,5 +1,8 @@
 from collections import Counter, defaultdict
 from typing import List, Dict, Tuple, Set, Optional
+import pickle
+import json
+from pathlib import Path
 
 
 class NGramModel:
@@ -9,7 +12,9 @@ class NGramModel:
     用于从索引序列中学习n-gram概率分布
     支持开始符（-1）和结束符（-2）
 
-    改进：支持预定义词汇表（initial_vocab参数）
+    改进：
+    - 支持预定义词汇表（initial_vocab参数）
+    - 支持模型保存和加载（save/load方法）
     """
 
     def __init__(self,
@@ -113,6 +118,164 @@ class NGramModel:
                 probability = numerator / denominator
                 self.prob_distribution[context][next_char] = probability
 
+    def save(self, filepath: str):
+        """
+        保存模型到文件（使用pickle）
+
+        参数:
+            filepath: 保存路径，建议使用 .pkl 扩展名
+                     例如: "model.pkl" 或 "models/ngram_model.pkl"
+
+        示例:
+            model.save("ngram_model.pkl")
+        """
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # 保存所有需要的属性
+        save_dict = {
+            'n': self.n,
+            'k': self.k,
+            'start_token': self.start_token,
+            'end_token': self.end_token,
+            'initial_vocab': self.initial_vocab,
+            'vocab': self.vocab,
+            'ngram_counts': self.ngram_counts,
+            'context_counts': self.context_counts,
+            'prob_distribution': dict(self.prob_distribution)
+        }
+
+        with open(filepath, 'wb') as f:
+            pickle.dump(save_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        print(f"Model saved to: {filepath}")
+        print(f"File size: {filepath.stat().st_size / 1024:.2f} KB")
+
+    @classmethod
+    def load(cls, filepath: str) -> 'NGramModel':
+        """
+        从文件加载模型（类方法）
+
+        参数:
+            filepath: 模型文件路径
+
+        返回:
+            加载的NGramModel实例
+
+        示例:
+            model = NGramModel.load("ngram_model.pkl")
+        """
+        filepath = Path(filepath)
+
+        if not filepath.exists():
+            raise FileNotFoundError(f"Model does not exist: {filepath}")
+
+        with open(filepath, 'rb') as f:
+            save_dict = pickle.load(f)
+
+        # 创建新实例
+        model = cls(
+            n=save_dict['n'],
+            k=save_dict['k'],
+            start_token=save_dict['start_token'],
+            end_token=save_dict['end_token'],
+            initial_vocab=save_dict['initial_vocab']
+        )
+
+        # 恢复训练后的数据
+        model.vocab = save_dict['vocab']
+        model.ngram_counts = save_dict['ngram_counts']
+        model.context_counts = save_dict['context_counts']
+        model.prob_distribution = defaultdict(dict, save_dict['prob_distribution'])
+
+        print(f"Model Loaded: {filepath}")
+        print(f"n={model.n}, k={model.k}, vocab_size={len(model.vocab)}")
+
+        return model
+
+    # def save_json(self, filepath: str):
+    #     """
+    #     保存模型到JSON文件（可读性好，但文件较大）
+    #
+    #     参数:
+    #         filepath: 保存路径，建议使用 .json 扩展名
+    #
+    #     注意:
+    #         - JSON不支持tuple作为key，会转换为字符串
+    #         - JSON不支持set，会转换为list
+    #         - 文件比pickle格式大，但人类可读
+    #     """
+    #     filepath = Path(filepath)
+    #     filepath.parent.mkdir(parents=True, exist_ok=True)
+    #
+    #     # 转换为JSON兼容格式
+    #     save_dict = {
+    #         'n': self.n,
+    #         'k': self.k,
+    #         'start_token': self.start_token,
+    #         'end_token': self.end_token,
+    #         'initial_vocab': list(self.initial_vocab) if self.initial_vocab else None,
+    #         'vocab': list(self.vocab),
+    #         'ngram_counts': {str(k): v for k, v in self.ngram_counts.items()},
+    #         'context_counts': {str(k): v for k, v in self.context_counts.items()},
+    #         'prob_distribution': {
+    #             str(context): {str(char): prob for char, prob in dist.items()}
+    #             for context, dist in self.prob_distribution.items()
+    #         }
+    #     }
+    #
+    #     with open(filepath, 'w', encoding='utf-8') as f:
+    #         json.dump(save_dict, f, indent=2)
+    #
+    #     print(f"✅ 模型已保存到JSON: {filepath}")
+    #     print(f"   文件大小: {filepath.stat().st_size / 1024:.2f} KB")
+
+    # @classmethod
+    # def load_json(cls, filepath: str) -> 'NGramModel':
+    #     """
+    #     从JSON文件加载模型
+    #
+    #     参数:
+    #         filepath: JSON模型文件路径
+    #
+    #     返回:
+    #         加载的NGramModel实例
+    #     """
+    #     filepath = Path(filepath)
+    #
+    #     if not filepath.exists():
+    #         raise FileNotFoundError(f"模型文件不存在: {filepath}")
+    #
+    #     with open(filepath, 'r', encoding='utf-8') as f:
+    #         save_dict = json.load(f)
+    #
+    #     # 创建新实例
+    #     model = cls(
+    #         n=save_dict['n'],
+    #         k=save_dict['k'],
+    #         start_token=save_dict['start_token'],
+    #         end_token=save_dict['end_token'],
+    #         initial_vocab=set(save_dict['initial_vocab']) if save_dict['initial_vocab'] else None
+    #     )
+    #
+    #     # 恢复训练后的数据，将字符串key转回tuple
+    #     model.vocab = set(save_dict['vocab'])
+    #     model.ngram_counts = Counter({
+    #         eval(k): v for k, v in save_dict['ngram_counts'].items()
+    #     })
+    #     model.context_counts = Counter({
+    #         eval(k): v for k, v in save_dict['context_counts'].items()
+    #     })
+    #     model.prob_distribution = defaultdict(dict, {
+    #         eval(context): {int(char): prob for char, prob in dist.items()}
+    #         for context, dist in save_dict['prob_distribution'].items()
+    #     })
+    #
+    #     print(f"✅ 模型已从JSON加载: {filepath}")
+    #     print(f"   n={model.n}, k={model.k}, vocab_size={len(model.vocab)}")
+    #
+    #     return model
+
     def get_probability_distribution(self) -> Dict[Tuple, Dict[int, float]]:
         """
         获取完整的概率分布字典
@@ -201,11 +364,29 @@ class NGramModel:
         """
         return token == self.end_token
 
+    def get_model_info(self) -> Dict:
+        """
+        获取模型信息摘要
+
+        返回:
+            包含模型统计信息的字典
+        """
+        return {
+            'n': self.n,
+            'k': self.k,
+            'vocab_size': len(self.vocab),
+            'num_unique_ngrams': len(self.ngram_counts),
+            'num_unique_contexts': len(self.context_counts),
+            'has_initial_vocab': self.initial_vocab is not None,
+            'start_token': self.start_token,
+            'end_token': self.end_token
+        }
+
 
 # 使用示例
 if __name__ == "__main__":
     print("=" * 70)
-    print("NGramModel - 向后兼容 + 新增initial_vocab支持")
+    print("NGramModel - 保存和加载功能演示")
     print("=" * 70)
 
     # 示例数据
@@ -213,133 +394,125 @@ if __name__ == "__main__":
         [1, 2, 3, 4, 5],
         [2, 3, 4, 5, 6],
         [1, 2, 3, 5, 6],
+        [1, 1, 2, 3, 4],
+        [2, 2, 3, 4, 5],
     ]
 
     # ========================================================================
-    print("\n示例 1: 原始用法（向后兼容，行为完全相同）")
+    print("\n步骤 1: 训练模型")
     print("=" * 70)
 
-    model_old = NGramModel(n=3, k=0.01, start_token=-1, end_token=-2)
-    model_old.fit(sequences)
-
-    print(f"词汇表大小: {len(model_old.vocab)}")
-    print(f"词汇表: {sorted(model_old.vocab)}")
-
-    # 测试未见符号
-    test_seq = [1, 2, 100]  # 100未见过
-    missing = [s for s in test_seq if s not in model_old.vocab]
-    if missing:
-        print(f"❌ 无法编码符号: {missing}")
-
-    # ========================================================================
-    print("\n示例 2: 新用法（使用initial_vocab）")
-    print("=" * 70)
-
-    # 预定义完整词汇表
-    full_vocab = set(range(200))  # 0-199
-
-    model_new = NGramModel(
+    model = NGramModel(
         n=3,
         k=0.01,
         start_token=-1,
         end_token=-2,
-        initial_vocab=full_vocab  # 🔑 新增参数
+        initial_vocab=set(range(100))  # 预定义词汇表
     )
-    model_new.fit(sequences)  # 训练数据不变
+    model.fit(sequences)
 
-    print(f"词汇表大小: {len(model_new.vocab)}")
+    print("模型信息:")
+    for key, value in model.get_model_info().items():
+        print(f"  {key}: {value}")
 
-    # 测试未见符号
-    missing = [s for s in test_seq if s not in model_new.vocab]
-    if missing:
-        print(f"❌ 无法编码符号: {missing}")
-    else:
-        print(f"✅ 所有符号都可编码（包括100）")
-
-    # ========================================================================
-    print("\n示例 3: 上下文未见过的处理")
-    print("=" * 70)
-
-    # 训练中见过的上下文
-    seen_context = (1, 2)
-    print(f"\n上下文 {seen_context} (训练中见过):")
-    probs_seen = model_new.get_next_char_prob(seen_context)
-    print(f"  包含 {len(probs_seen)} 个符号的概率")
-    # 显示前3个最高概率
-    top3 = sorted(probs_seen.items(), key=lambda x: -x[1])[:3]
-    for char, prob in top3:
-        print(f"    符号 {char}: {prob:.6f}")
-
-    # 训练中未见过的上下文
-    unseen_context = (100, 101)
-    print(f"\n上下文 {unseen_context} (训练中未见过):")
-    probs_unseen = model_new.get_next_char_prob(unseen_context)
-    print(f"  返回均匀分布: 所有 {len(probs_unseen)} 个符号等概率")
-    print(f"  每个符号概率: {1.0 / len(probs_unseen):.6f}")
-    # 验证是否均匀
-    unique_probs = set(probs_unseen.values())
-    print(f"  是否均匀: {'✓' if len(unique_probs) == 1 else '✗'}")
+    # 测试预测
+    test_context = (1, 2)
+    pred = model.predict_next(test_context)
+    print(f"\n预测: context {test_context} -> {pred}")
 
     # ========================================================================
-    print("\n示例 4: 概率分布对比")
+    print("\n步骤 2: 保存模型（pickle格式）")
     print("=" * 70)
 
-    context = (1, 2)
-
-    # 有initial_vocab时
-    probs_with = model_new.prob_distribution.get(context, {})
-    print(f"\n使用initial_vocab:")
-    print(f"  上下文 {context} 包含 {len(probs_with)} 个符号的概率")
-
-    # 没有initial_vocab时
-    probs_without = model_old.prob_distribution.get(context, {})
-    print(f"\n不使用initial_vocab:")
-    print(f"  上下文 {context} 包含 {len(probs_without)} 个符号的概率")
-
-    print(f"\n差异: {len(probs_with) - len(probs_without)} 个额外符号")
+    model.save("ngram_model.pkl")
 
     # ========================================================================
-    print("\n示例 5: 实际编码测试")
+    print("\n步骤 3: 保存模型（JSON格式）")
     print("=" * 70)
 
-    from arithmetic_coding import ArithmeticEncoder
+    model.save_json("ngram_model.json")
 
-    # 使用新模型
-    encoder = ArithmeticEncoder(ngram_model=model_new, bits=32)
+    # ========================================================================
+    print("\n步骤 4: 加载模型（pickle格式）")
+    print("=" * 70)
 
-    test_sequences = [
-        [1, 2, 3],  # 训练中见过
-        [1, 2, 100],  # 包含未见符号
-        [100, 101, 102],  # 全是未见符号
-    ]
+    loaded_model = NGramModel.load("ngram_model.pkl")
 
-    for i, seq in enumerate(test_sequences):
-        try:
-            encoded = encoder.encode(seq)
-            decoded = encoder.decode(encoded)
-            correct = "✓" if decoded == seq else "✗"
-            print(f"序列 {i} {seq}: {len(encoded)} bits {correct}")
-        except Exception as e:
-            print(f"序列 {i} {seq}: ✗ {e}")
+    # 验证加载的模型
+    pred_loaded = loaded_model.predict_next(test_context)
+    print(f"\n加载后预测: context {test_context} -> {pred_loaded}")
+    print(f"预测是否一致: {'✓' if pred == pred_loaded else '✗'}")
+
+    # ========================================================================
+    print("\n步骤 5: 加载模型（JSON格式）")
+    print("=" * 70)
+
+    loaded_model_json = NGramModel.load_json("ngram_model.json")
+
+    pred_json = loaded_model_json.predict_next(test_context)
+    print(f"\nJSON加载后预测: context {test_context} -> {pred_json}")
+    print(f"预测是否一致: {'✓' if pred == pred_json else '✗'}")
+
+    # ========================================================================
+    print("\n步骤 6: 对比概率分布")
+    print("=" * 70)
+
+    prob_original = model.get_next_char_prob(test_context)
+    prob_loaded = loaded_model.get_next_char_prob(test_context)
+    prob_json = loaded_model_json.get_next_char_prob(test_context)
+
+    print(f"\n上下文 {test_context} 的概率分布（显示前5个）:")
+    top5_original = sorted(prob_original.items(), key=lambda x: -x[1])[:5]
+
+    print("\n原始模型:")
+    for char, prob in top5_original:
+        print(f"  {char}: {prob:.6f}")
+
+    print("\nPickle加载:")
+    for char, prob in sorted(prob_loaded.items(), key=lambda x: -x[1])[:5]:
+        print(f"  {char}: {prob:.6f}")
+
+    print("\nJSON加载:")
+    for char, prob in sorted(prob_json.items(), key=lambda x: -x[1])[:5]:
+        print(f"  {char}: {prob:.6f}")
+
+    # 检查概率是否完全一致
+    prob_match = all(
+        abs(prob_original.get(char, 0) - prob_loaded.get(char, 0)) < 1e-10
+        for char in set(prob_original.keys()) | set(prob_loaded.keys())
+    )
+    print(f"\n概率完全一致: {'✓' if prob_match else '✗'}")
 
     # ========================================================================
     print("\n" + "=" * 70)
     print("总结")
     print("=" * 70)
     print("""
-✅ 向后兼容：
-   - 不提供initial_vocab时，行为与原版完全相同
-   - 类名保持NGramModel，可以直接替换
+✅ 两种保存格式：
+   1. Pickle格式（推荐）：
+      - 文件小，速度快
+      - 完全保留所有Python对象
+      - 使用: model.save("model.pkl")
+      - 加载: model = NGramModel.load("model.pkl")
 
-✅ 新功能：
-   - 提供initial_vocab参数，预定义完整词汇表
-   - 训练数据无需修改，不添加占位符
-   - 自动为所有vocab符号分配概率
+   2. JSON格式：
+      - 人类可读
+      - 跨语言兼容
+      - 文件较大
+      - 使用: model.save_json("model.json")
+      - 加载: model = NGramModel.load_json("model.json")
 
-✅ 上下文处理：
-   - 见过的上下文：使用训练得到的概率分布
-   - 未见的上下文：返回均匀分布（所有符号等概率）
+✅ 使用场景：
+   - 生产环境：使用pickle，效率高
+   - 调试/检查：使用JSON，可以手动查看
+   - 跨平台：使用JSON，更通用
 
 🎯 推荐用法：
+   # 训练
    model = NGramModel(n=3, k=0.00001, initial_vocab=set(range(2048)))
+   model.fit(sequences)
+   model.save("models/ngram_model.pkl")
+
+   # 加载
+   model = NGramModel.load("models/ngram_model.pkl")
     """)
